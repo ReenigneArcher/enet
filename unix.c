@@ -2,7 +2,7 @@
  @file  unix.c
  @brief ENet Unix system specific functions
 */
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(NXDK)
 
 // Required for IPV6_PKTINFO with Darwin headers
 #ifndef __APPLE_USE_RFC_3542
@@ -160,8 +160,12 @@
 #include <poll.h>
 #endif
 
-#if !defined(HAS_SOCKLEN_T) && !defined(__socklen_t_defined) && !defined(__HAIKU__)
+#if !defined(HAS_SOCKLEN_T) && !defined(__socklen_t_defined) && !defined(__HAIKU__) && !defined(NXDK)
 typedef int socklen_t;
+#endif
+
+#if defined(NXDK) && !defined(EHOSTDOWN)
+#define EHOSTDOWN EHOSTUNREACH
 #endif
 
 #ifndef SOMAXCONN
@@ -651,7 +655,11 @@ enet_socket_send (ENetSocket socket,
         if (localAddress->address.ss_family == AF_INET) {
             struct in_pktinfo pktInfo;
 
+#if defined(NXDK)
+            pktInfo.ipi_addr = ((struct sockaddr_in*)&localAddress->address)->sin_addr;
+#else
             pktInfo.ipi_spec_dst = ((struct sockaddr_in*)&localAddress->address)->sin_addr;
+#endif
             pktInfo.ipi_ifindex = 0; // Unspecified
 
             msgHdr.msg_control = controlBufData;
@@ -715,7 +723,9 @@ enet_socket_send (ENetSocket socket,
         case EADDRNOTAVAIL:
         case ENETDOWN:
         case ENETUNREACH:
+#if !defined(NXDK)
         case EHOSTDOWN:
+#endif
         case EHOSTUNREACH:
             return 0;
 

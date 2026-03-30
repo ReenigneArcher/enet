@@ -93,9 +93,13 @@ set(SOURCE_FILES
     list.c
     packet.c
     peer.c
-    protocol.c
-    unix.c
-    win32.c)
+    protocol.c)
+
+if(CMAKE_C_COMPILER MATCHES "nxdk-cc" OR DEFINED NXDK_DIR OR WIN32 OR MINGW)
+    list(APPEND SOURCE_FILES win32.c)
+else()
+    list(APPEND SOURCE_FILES unix.c)
+endif()
 
 source_group(include FILES ${INCLUDE_FILES})
 source_group(source FILES ${SOURCE_FILES})
